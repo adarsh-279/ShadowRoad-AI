@@ -1,4 +1,4 @@
-const mongoose = require('mongoose');
+import mongoose from "mongoose";
 
 const LawSchema = new mongoose.Schema({
     category: { type: String, required: true },
@@ -11,4 +11,6 @@ const LawSchema = new mongoose.Schema({
     isDanger: { type: Boolean, default: false }
 });
 
-module.exports = mongoose.model('Law', LawSchema);
+const lawModel = mongoose.model('Law', LawSchema);
+
+export default lawModel

@@ -1,4 +1,4 @@
-const mongoose = require('mongoose');
+import mongoose from "mongoose";
 
 const ChallanSchema = new mongoose.Schema({
     zone: { type: String, required: true },
@@ -10,4 +10,6 @@ const ChallanSchema = new mongoose.Schema({
     issuedAt: { type: Date, default: Date.now }
 });
 
-module.exports = mongoose.model('Challan', ChallanSchema);
+const challanModel = mongoose.model('Challan', ChallanSchema);
+
+export default challanModel
