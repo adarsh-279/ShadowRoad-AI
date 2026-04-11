@@ -272,17 +272,20 @@ input, select, textarea { font-family: var(--font); }
   background: repeating-linear-gradient(90deg, var(--primary) 0, var(--primary) 30px, transparent 30px, transparent 60px);
   animation: roadMove 3s linear infinite;
 }
-@keyframes roadMove { from { background-position: 0; } to { background-position: -60px; } }
+@keyframes roadMove { from { background-position: -60px; } to { background-position: 0; } }
 .road-car {
-  position: absolute; bottom: 30px; font-size: 1.4rem;
+  position: absolute; bottom: 28px; font-size: 1.4rem;
   animation: carMove 8s linear infinite;
 }
-.car-1 { animation-duration: 6s; animation-delay: 0s; }
+.car-1 { animation-duration: 6s; animation-delay: 0s; bottom: 4px; }
 .car-2 { animation-duration: 8s; animation-delay: -3s; font-size: 1.2rem; }
 .car-3 { animation-duration: 5s; animation-delay: -1.5s; font-size: 1rem; bottom: 34px; }
+.car-4 { animation-duration: 6s; animation-delay: 0s; bottom: 4px; }
+.car-5 { animation-duration: 10s; animation-delay: -3s; font-size: 1.2rem; }
+.car-6 { animation-duration: 15s; animation-delay: -1.5s; font-size: 1.2rem; bottom: 2px; }
 @keyframes carMove {
-  from { left: -80px; }
-  to { left: calc(100% + 80px); }
+  from { right: -80px; }
+  to { right: calc(100% + 80px); }
 }
 
 @keyframes fadeUp {
