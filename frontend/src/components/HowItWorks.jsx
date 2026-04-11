@@ -32,8 +32,7 @@ const HowItWorks = () => {
     <section className="section" id="how-it-works">
       <div className="container">
         <div className="section-header">
-          <div className="section-badge">PS1 — ShadowRoad AI</div>
-          <h2 className="section-title">How ShadowRoad AI Works</h2>
+          <h2 className="section-title">How ShadowRoad - AI Works</h2>
           <p className="section-desc">Privacy-first AI that predicts danger before it happens — no cameras, no surveillance.</p>
         </div>
         <div className="steps-grid" ref={stepsRef}>

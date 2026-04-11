@@ -57,6 +57,7 @@ const DriveLegal = () => {
       const res = await axios.post('http://localhost:5000/api/chat', { message: text });
       setMessages(prev => [...prev, { type: 'bot', text: res.data.text }]);
     } catch (err) {
+      console.log(err);
       setMessages(prev => [...prev, { type: 'bot', text: 'Sorry, I am having trouble connecting to the server.' }]);
     } finally {
       setIsTyping(false);
@@ -74,7 +75,6 @@ const DriveLegal = () => {
     <section className="section" id="drivelegal">
       <div className="container">
         <div className="section-header">
-          <div className="section-badge legal-badge">PS2 — DriveLegal</div>
           <h2 className="section-title">AI Legal Assistant for Drivers</h2>
           <p className="section-desc">Know your rights. Earn your score. Fight unfair challans. All in one app.</p>
         </div>

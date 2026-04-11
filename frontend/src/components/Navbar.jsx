@@ -27,10 +27,9 @@ const Navbar = () => {
         <div className="nav-logo">
           <div className="logo-icon">🛣️</div>
           <div className="logo-text">
-            <span className="logo-shadow">ShadowRoad</span>
+            <span className="logo-shadow">ShadowRoad </span>
+            <span className="logo-x">-</span>
             <span className="logo-sep"> AI </span>
-            <span className="logo-x">×</span>
-            <span className="logo-drive"> DriveLegal</span>
           </div>
         </div>
         <div className={`nav-links ${isOpen ? 'open' : ''}`} id="nav-links">
