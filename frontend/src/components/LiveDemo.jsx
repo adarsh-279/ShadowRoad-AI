@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
+import MapComponent from './MapComponent';
 
 const LiveDemo = () => {
   const [isRunning, setIsRunning] = useState(false);
@@ -131,39 +132,13 @@ const LiveDemo = () => {
         <div className="demo-dashboard">
           {/* Left Column - Map & Feeds */}
           <div className="dash-left">
-            <div className="mock-map">
-              <div className="map-overlay-text">LIVE · CHENNAI, IN</div>
-              <div className="map-road map-road-h"></div>
-              <div className="map-road map-road-v"></div>
-              
-              {demoState === 'safe' && <div className="map-zone zone-safe">Safe Route</div>}
-              {demoState === 'warn' && <div className="map-zone zone-warn">High-Risk Zone ahead</div>}
-              {demoState === 'danger' && <div className="map-zone zone-danger">CRASH DETECTED. SOS INITIATED.</div>}
-
-              {/* Simulated Car Icon */}
-              <div className="map-car" style={{ 
-                  left: `calc(50% - 15px + ${(stepRef.current < 45 ? stepRef.current : 45) * 2}px)`, 
-                  top: 'calc(50% - 15px)',
-                  transform: demoState === 'danger' ? 'rotate(45deg) scale(1.2)' : 'rotate(0deg)'
-                }}>
-                🚙
-              </div>
-
-              {/* Simulated Ambulance Icon */}
-              {ambulanceStatus && (
-                <div className="map-car" style={{ 
-                    left: ambulanceStatus === 'arrived' ? `calc(50% + 15px + ${(stepRef.current < 45 ? stepRef.current : 45) * 2}px)` : 
-                         (ambulanceStatus === 'dispatched' ? 'calc(50% - 20px)' : 'calc(100% - 30px)'), 
-                    top: ambulanceStatus === 'arrived' ? 'calc(50% - 15px)' : 
-                         (ambulanceStatus === 'dispatched' ? 'calc(10% + 20px)' : '10%'),
-                    transform: 'rotate(-45deg)',
-                    transition: 'left 7s ease-out, top 7s ease-out',
-                    fontSize: '1.8rem',
-                    zIndex: 10
-                  }}>
-                  🚑
-                </div>
-              )}
+            <div className="real-map-container">
+              <MapComponent 
+                gps={gps} 
+                demoState={demoState} 
+                stepRef={stepRef}
+                ambulanceStatus={ambulanceStatus}
+              />
             </div>
 
             <div className="sensor-feed">
