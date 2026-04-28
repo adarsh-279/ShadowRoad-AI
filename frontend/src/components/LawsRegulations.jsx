@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import MapComponent from "./MapComponent";
 
-const LiveDemo = () => {
+const LawsRegulations = () => {
   const [isRunning, setIsRunning] = useState(false);
   const [demoState, setDemoState] = useState("safe");
   const [ambulanceStatus, setAmbulanceStatus] = useState(null);
@@ -330,4 +330,4 @@ const LiveDemo = () => {
   );
 };
 
-export default LiveDemo;
+export default LawsRegulations;

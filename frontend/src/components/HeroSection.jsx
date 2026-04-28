@@ -29,7 +29,7 @@ const HeroSection = () => {
         <div className="hstat-div"></div>
         <div className="hstat">
           <div className="hstat-val">₹24Cr</div>
-          <div className="hstat-label">Annual revenue</div>
+          <div className="hstat-label">Estimated Annual revenue</div>
         </div>
         <div className="hstat-div"></div>
         <div className="hstat">
