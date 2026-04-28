@@ -3,6 +3,7 @@ dotenv.config();
 
 import express from "express";
 import cookieParser from "cookie-parser";
+import cors from "cors";
 
 // Routes
 import authRouter from "./routes/auth.routes.js";
@@ -12,23 +13,35 @@ import chatbotRoutes from "./routes/chatbot.routes.js";
 
 const app = express();
 
-// Middleware
+// ✅ CORS (VERY IMPORTANT)
+app.use(
+  cors({
+    origin: process.env.CLIENT_URL,
+    credentials: true,
+  }),
+);
+
+// ✅ Middleware
 app.use(express.json());
 app.use(cookieParser());
 
-
-// Routes
+// ✅ Routes
 app.use("/api/auth", authRouter);
 app.use("/api/challan", challanRoutes);
 app.use("/api/laws", lawRoutes);
 app.use("/api/chatbot", chatbotRoutes);
 
-// Default Route
+// ✅ Default Route
 app.get("/", (req, res) => {
   res.send("🚀 ShadowRoad AI Backend Running...");
 });
 
-// Global Error Handler (important)
+// ❌ 404 handler (recommended)
+app.use((req, res) => {
+  res.status(404).json({ message: "Route not found" });
+});
+
+// ✅ Global Error Handler
 app.use((err, req, res, next) => {
   console.error(err.stack);
   res.status(500).json({
@@ -36,7 +49,7 @@ app.use((err, req, res, next) => {
   });
 });
 
-// Start Server
+// ✅ Start Server
 const PORT = process.env.PORT || 8000;
 
 app.listen(PORT, () => {
