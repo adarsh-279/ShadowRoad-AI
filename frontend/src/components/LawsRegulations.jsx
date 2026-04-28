@@ -1,99 +1,333 @@
-import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+import React, { useState, useEffect, useRef, useCallback } from "react";
+import MapComponent from "./MapComponent";
 
-const LawsRegulations = () => {
-  const [laws, setLaws] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [activeTab, setActiveTab] = useState('all');
+const LiveDemo = () => {
+  const [isRunning, setIsRunning] = useState(false);
+  const [demoState, setDemoState] = useState("safe");
+  const [ambulanceStatus, setAmbulanceStatus] = useState(null);
 
+  const [gps, setGps] = useState(null);
+  const [ambulancePos, setAmbulancePos] = useState(null);
+
+  const [speed, setSpeed] = useState(45);
+  const [gyro, setGyro] = useState({ x: 0.02, y: -0.01, z: 0.98 });
+
+  const [alerts, setAlerts] = useState([
+    {
+      id: 1,
+      type: "info",
+      time: "10:00:01",
+      msg: "System initialized. Fetching GPS location...",
+    },
+  ]);
+
+  const simInterval = useRef(null);
+  const stepRef = useRef(0);
+  const watchIdRef = useRef(null);
+  const alertsEndRef = useRef(null);
+
+  const isSimulatingRef = useRef(false);
+
+  // ✅ HARD FREEZE AFTER CRASH (MAIN FIX)
+  const freezeRef = useRef(false);
+
+  const directionRef = useRef({ lat: 0.0008, lng: 0.0006 });
+
+  // AUTO SCROLL
   useEffect(() => {
-    // We try to fetch from DB. If DB is empty, we hit seed first, or fallback to fixed array if offline.
-    const fetchLaws = async () => {
-      try {
-        let res = await axios.get('http://localhost:5000/api/laws');
-        if (res.data.length === 0) {
-           await axios.post('http://localhost:5000/api/laws/seed');
-           res = await axios.get('http://localhost:5000/api/laws');
-        }
-        setLaws(res.data);
-      } catch (err) {
-        console.warn("Backend not reachable or laws not seeded, using fallback data.");
-        setLaws([
-          { category: 'speed', icon: '🏙️', title: 'City Road Speed Limit', section: '§112 MV Act', fine: '50 km/h', description: 'Maximum speed on urban roads.', penalty: 'Penalty: ₹1,000–₹2,000 for LMV' },
-          { category: 'speed', icon: '🚦', title: 'Red Light Jumping', section: '§119 / §177A', fine: '₹5,000', description: 'Crossing a red traffic signal.', penalty: '₹5,000 fine + 6 points on DL', isDanger: true },
-          { category: 'safety', icon: '⛑️', title: 'Helmet — Rider Mandatory', section: '§129 / §194D', fine: '₹1,000', description: 'ISI-marked helmet compulsory.', penalty: '₹1,000 fine + 3-month DL disqualification', isDanger: true },
-          { category: 'docs', icon: '🪪', title: 'No Driving Licence', section: '§181', fine: '₹5,000', description: 'Operating any motor vehicle without a valid DL.', penalty: '₹5,000 fine', isDanger: true }
-        ]);
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchLaws();
+    alertsEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [alerts]);
+
+  const addAlert = useCallback((type, msg) => {
+    const time = new Date().toLocaleTimeString("en-IN", {
+      hour12: false,
+    });
+
+    setAlerts((prev) => [
+      ...prev.slice(-49),
+      { id: Date.now(), type, time, msg },
+    ]);
   }, []);
 
-  const filteredLaws = laws.filter(law => {
-    const matchesTab = activeTab === 'all' || law.category === activeTab;
-    const matchesSearch = law.title.toLowerCase().includes(searchTerm.toLowerCase()) || 
-                          (law.description && law.description.toLowerCase().includes(searchTerm.toLowerCase()));
-    return matchesTab && matchesSearch;
-  });
+  // GPS (BLOCK WHEN SIM OR CRASH)
+  useEffect(() => {
+    if (!navigator.geolocation) return;
+
+    watchIdRef.current = navigator.geolocation.watchPosition(
+      (pos) => {
+        if (isSimulatingRef.current || freezeRef.current) return;
+
+        const { latitude, longitude } = pos.coords;
+        setGps({ lat: latitude, lng: longitude });
+      },
+      () => {
+        if (!gps) setGps({ lat: 28.6139, lng: 77.209 });
+      },
+      { enableHighAccuracy: true },
+    );
+
+    return () => {
+      if (watchIdRef.current)
+        navigator.geolocation.clearWatch(watchIdRef.current);
+    };
+  }, [gps]);
+
+  // AMBULANCE MOVEMENT
+  const moveAmbulance = useCallback(() => {
+    setAmbulancePos((prev) => {
+      if (!prev || !gps) return prev;
+
+      return {
+        lat: prev.lat + (gps.lat - prev.lat) * 0.2,
+        lng: prev.lng + (gps.lng - prev.lng) * 0.2,
+      };
+    });
+  }, [gps]);
+
+  // SIMULATION
+  const simulateStep = useCallback(() => {
+    if (freezeRef.current) return;
+
+    stepRef.current += 1;
+    const step = stepRef.current;
+
+    // 🚗 movement
+    setGps((prev) => {
+      if (!prev || freezeRef.current) return prev;
+
+      const speedFactor = speed / 10000;
+
+      return {
+        lat: prev.lat + directionRef.current.lat * speedFactor * 50,
+        lng: prev.lng + directionRef.current.lng * speedFactor * 50,
+      };
+    });
+
+    directionRef.current.lat += (Math.random() - 0.5) * 0.0001;
+    directionRef.current.lng += (Math.random() - 0.5) * 0.0001;
+
+    setGyro({
+      x: (Math.random() * 0.1 - 0.05).toFixed(2),
+      y: (Math.random() * 0.1 - 0.05).toFixed(2),
+      z: (0.95 + Math.random() * 0.1).toFixed(2),
+    });
+
+    // ---------------- SPEED PHASES ----------------
+    if (step < 20) {
+      setSpeed((p) => Math.min(p + 2, 70));
+    } else if (step === 20) {
+      setDemoState("warn");
+      addAlert("warn", "⚠️ Entering high-risk zone.");
+      setSpeed(70);
+    } else if (step < 40) {
+      setSpeed(70);
+    } else if (step === 40) {
+      setDemoState("danger");
+      addAlert("danger", "⚠️ Crash probability HIGH!");
+      setSpeed((p) => Math.max(p - 12, 0));
+    } else if (step < 50) {
+      setSpeed((p) => Math.max(p - 12, 0));
+    }
+
+    // ---------------- CRASH ----------------
+    else {
+      if (!freezeRef.current) {
+        freezeRef.current = true;
+
+        setSpeed(0);
+        setDemoState("danger");
+
+        addAlert("danger", "💥 Crash detected!");
+        setAmbulanceStatus("alerting");
+
+        if (gps) {
+          setAmbulancePos({
+            lat: gps.lat + 0.03,
+            lng: gps.lng + 0.03,
+          });
+        }
+
+        // 🚑 SEQUENCE CONTROL (FIXED & RELIABLE)
+
+        setTimeout(() => {
+          setAmbulanceStatus("dispatched");
+          addAlert("info", "🚑 Ambulance alerted");
+        }, 2000);
+
+        // 1️⃣ dispatched (after 2s)
+        setTimeout(() => {
+          setAmbulanceStatus("dispatched");
+          addAlert("info", "🚑 Ambulance dispatched");
+        }, 4000);
+
+        // 2️⃣ on the way (after 4s)
+        setTimeout(() => {
+          setAmbulanceStatus("on the way");
+          addAlert("info", "🚑 Ambulance is on the way...");
+        }, 6000);
+
+        // 3️⃣ moving animation (after 4–7s window)
+        setTimeout(() => {
+          const interval = setInterval(() => {
+            moveAmbulance();
+          }, 700);
+
+          // stop movement after 7s
+          setTimeout(() => clearInterval(interval), 7000);
+        }, 4000);
+
+        // 4️⃣ arrived (after 9s)
+        setTimeout(() => {
+          setAmbulanceStatus("arrived");
+          addAlert("safe", "✅ Ambulance reached accident site");
+        }, 9000);
+
+        // 5️⃣ end demo (after 12s)
+        setTimeout(() => {
+          clearInterval(simInterval.current);
+          setIsRunning(false);
+          addAlert("safe", "🚀 Demo ended. Stay safe on the roads!");
+          isSimulatingRef.current = false;
+        }, 12000);
+      }
+    }
+  }, [gps, speed, moveAmbulance, addAlert]);
+
+  // START
+  const startDemo = () => {
+    if (isRunning) return;
+
+    freezeRef.current = false; // ✅ RESET CRASH STATE
+    isSimulatingRef.current = true;
+
+    setIsRunning(true);
+    setDemoState("safe");
+    setAmbulanceStatus(null);
+    setAmbulancePos(null);
+    setSpeed(45);
+    stepRef.current = 0;
+
+    addAlert("info", "🚀 Demo started");
+
+    clearInterval(simInterval.current);
+    simInterval.current = setInterval(simulateStep, 700);
+  };
+
+  // STOP
+  const stopDemo = () => {
+    isSimulatingRef.current = false;
+
+    setIsRunning(false);
+    clearInterval(simInterval.current);
+    addAlert("warn", "⛔ Demo stopped");
+  };
+
+  useEffect(() => {
+    return () => clearInterval(simInterval.current);
+  }, []);
 
   return (
-    <section className="section" id="laws">
+    <section className="section" id="demo">
       <div className="container">
-        <div className="section-header">
-          <div className="section-badge laws-badge">Motor Vehicles Act 2019</div>
-          <h2 className="section-title">India Road Laws & Regulations</h2>
-          <p className="section-desc">Complete reference of Indian traffic laws, penalties, and your rights. Updated as per MV Amendment Act 2019.</p>
-        </div>
+        <h2 className="section-title">Live Emergency Demo</h2>
 
-        <div className="laws-search-wrap">
-          <div className="laws-search-box">
-            <span className="search-icon">🔍</span>
-            <input 
-              type="text" 
-              className="laws-search-input" 
-              placeholder="Search any law, fine, section… e.g. 'helmet', 'drunk', '₹5000'" 
-              value={searchTerm}
-              onChange={e => setSearchTerm(e.target.value)}
-            />
-            {searchTerm && <button className="laws-search-clear" onClick={() => setSearchTerm('')}>✕</button>}
-          </div>
-          <div className="laws-search-count">{filteredLaws.length} law{filteredLaws.length !== 1 ? 's' : ''} found</div>
-        </div>
+        <div className="demo-dashboard">
+          <div className="dash-left">
+            <div className="real-map-container">
+              {gps ? (
+                <MapComponent
+                  gps={gps}
+                  demoState={demoState}
+                  ambulancePos={ambulancePos}
+                />
+              ) : (
+                <div className="loading-box">📍 Fetching location...</div>
+              )}
+            </div>
 
-        <div className="laws-tabs" role="tablist">
-          <button className={`laws-tab ${activeTab === 'all' ? 'active' : ''}`} onClick={() => setActiveTab('all')}>All Laws</button>
-          <button className={`laws-tab ${activeTab === 'speed' ? 'active' : ''}`} onClick={() => setActiveTab('speed')}>🚦 Speed & Zones</button>
-          <button className={`laws-tab ${activeTab === 'safety' ? 'active' : ''}`} onClick={() => setActiveTab('safety')}>🛡️ Safety Gear</button>
-          <button className={`laws-tab ${activeTab === 'impaired' ? 'active' : ''}`} onClick={() => setActiveTab('impaired')}>🍺 Impaired</button>
-          <button className={`laws-tab ${activeTab === 'docs' ? 'active' : ''}`} onClick={() => setActiveTab('docs')}>📄 Docs</button>
-        </div>
-
-        {loading ? (
-          <div style={{textAlign: 'center', padding: '2rem'}}>Loading laws database...</div>
-        ) : (
-          <div className="laws-cards-grid">
-            {filteredLaws.map((law, idx) => (
-              <div key={idx} className={`law-card ${law.isDanger ? 'law-card-danger' : ''}`} style={{opacity: 1, transform: 'none'}}>
-                <div className="law-card-header">
-                  <div className="law-icon">{law.icon}</div>
-                  <div className="law-info">
-                    <div className="law-title">{law.title}</div>
-                    <div className="law-section">{law.section}</div>
-                  </div>
-                  <div className="law-fine">{law.fine}</div>
-                </div>
-                <div className="law-desc">{law.description}</div>
-                <div className="law-penalty">{law.penalty}</div>
+            <div className="sensor-feed">
+              <div className="sensor-row">
+                <span>Speed</span>
+                <span>{speed} km/h</span>
               </div>
-            ))}
+
+              <div className="sensor-row">
+                <span>GPS</span>
+                <span>
+                  {gps
+                    ? `${gps.lat.toFixed(4)}, ${gps.lng.toFixed(4)}`
+                    : "Loading"}
+                </span>
+              </div>
+
+              <div className="sensor-row">
+                <span>Gyro</span>
+                <span>
+                  {gyro.x}, {gyro.y}, {gyro.z}
+                </span>
+              </div>
+            </div>
           </div>
-        )}
+
+          <div className="dash-right">
+            <div className="alerts-list">
+              {alerts.map((a) => (
+                <div key={a.id} className={`alert-item ${a.type}`}>
+                  [{a.time}] {a.msg}
+                </div>
+              ))}
+              <div ref={alertsEndRef} />
+            </div>
+
+            <div
+              className="ctrl-btns"
+              style={{ display: "flex", gap: "12px", marginTop: "16px" }}
+            >
+              <button
+                onClick={startDemo}
+                disabled={isRunning}
+                style={{
+                  flex: 1,
+                  padding: "12px",
+                  borderRadius: "8px",
+                  border: "none",
+                  fontWeight: "600",
+                  background: isRunning ? "#555" : "#22c55e",
+                  color: "#fff",
+                  cursor: isRunning ? "not-allowed" : "pointer",
+                }}
+              >
+                ▶ Start Demo
+              </button>
+
+              <button
+                onClick={stopDemo}
+                disabled={!isRunning}
+                style={{
+                  flex: 1,
+                  padding: "12px",
+                  borderRadius: "8px",
+                  border: "none",
+                  fontWeight: "600",
+                  background: !isRunning ? "#555" : "#ef4444",
+                  color: "#fff",
+                  cursor: !isRunning ? "not-allowed" : "pointer",
+                }}
+              >
+                ⏹ Stop
+              </button>
+            </div>
+
+            {ambulanceStatus && (
+              <div className="ambulance-box">
+                🚑 {ambulanceStatus.toUpperCase()}
+              </div>
+            )}
+          </div>
+        </div>
       </div>
     </section>
   );
 };
 
-export default LawsRegulations;
+export default LiveDemo;
