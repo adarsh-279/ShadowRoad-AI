@@ -87,17 +87,31 @@ ShadowRoad AI introduces a **data-driven, predictive safety layer** for everyday
 
 ## 🧩 System Architecture
 
-User Input (Speed / Events)
-↓
-React Frontend (UI + Map)
-↓
-Express API Layer
-↓
-Logic Engine (Risk Detection)
-↓
-MongoDB (Storage)
-↓
-Alerts + Score + Risk Zones
+### Flow Overview
+
+1. **User Input**
+   - Speed data
+   - Driving events
+
+2. **Frontend (React)**
+   - Displays UI & Map
+   - Sends data to backend
+
+3. **Backend (Express API)**
+   - Handles requests
+   - Routes data to logic engine
+
+4. **Logic Engine**
+   - Calculates risk score
+   - Detects dangerous conditions
+
+5. **Database (MongoDB)**
+   - Stores user data & logs
+
+6. **Output**
+   - Alerts
+   - Risk score
+   - Risk zones
 
 ---
 
@@ -110,7 +124,6 @@ Directory structure:
     ├── backend/
     │   ├── package-lock.json
     │   ├── package.json
-    │   ├── README.md
     │   ├── server.js
     │   └── src/
     │       ├── app.js
@@ -138,7 +151,6 @@ Directory structure:
     │   ├── public/
     │   │   ├── favicon.svg
     │   │   └── icons.svg
-    │   ├── README.md
     │   ├── src/
     │   │   ├── App.css
     │   │   ├── App.jsx.jsx
@@ -171,6 +183,7 @@ Directory structure:
 
 ### 🔧 Prerequisites
 
+- React.js
 - Node.js  
 - MongoDB  
 - npm / yarn  
@@ -189,12 +202,35 @@ cd shadowroad-mern
 
 ## 🌐 API Endpoints
 
-| Method | Endpoint     | Description         |
-|--------|-------------|---------------------|
-| POST   | /api/drive  | Send driving data   |
-| GET    | /api/risk   | Fetch risk zones    |
-| GET    | /api/score  | Get driving score   |
+### 🔐 Auth Routes
+| Method | Endpoint              | Description              |
+|--------|----------------------|--------------------------|
+| POST   | /api/auth/register   | Register new user        |
+| POST   | /api/auth/login      | Login user               |
+| GET    | /api/auth/getMe      | Get current user details |
+| GET    | /api/auth/logout     | Logout user              |
 
+---
+
+### 🚗 Challan Routes
+| Method | Endpoint                  | Description                |
+|--------|--------------------------|----------------------------|
+| POST   | /api/challan/check       | Check vehicle challan      |
+
+---
+
+### ⚖️ Law Routes
+| Method | Endpoint           | Description                |
+|--------|-------------------|----------------------------|
+| GET    | /api/laws         | Get all traffic laws       |
+| POST   | /api/laws/seed    | Seed laws into database    |
+
+---
+
+### 🤖 Chatbot Routes
+| Method | Endpoint        | Description                 |
+|--------|----------------|-----------------------------|
+| POST   | /api/chatbot   | Get AI chatbot response     |
 ---
 
 ## 🔒 Privacy & Design Philosophy
