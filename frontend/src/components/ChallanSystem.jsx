@@ -74,7 +74,7 @@ const ChallanSystem = () => {
 
         {/* Revenue Banner */}
         <div className="revenue-banner" id="revenue-banner">
-          <div className="rev-main">₹24,000 Crore / Year — India Revenue</div>
+          <div className="rev-main">Estimated ₹24 Crore / Year — India Revenue</div>
           <div className="rev-sub">
             ↑ Currently being missed — ShadowRoad captures it automatically
           </div>
